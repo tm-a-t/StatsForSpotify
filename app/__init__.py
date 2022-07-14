@@ -2,7 +2,7 @@ import secrets
 
 import aiohttp
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 
 import config
 from app.bot import BotClient
@@ -16,6 +16,7 @@ bot = BotClient('bot', *config.TELEGRAM_API)
 bot.parse_mode = 'html'
 bot.app = app
 
+authorized_response = HTMLResponse(open('authorized.html').read(), status_code=200)
 auth_state_data = {}
 
 
@@ -32,7 +33,7 @@ async def authorize_spotify(request: Request, id: int, first_name: str, last_nam
     return RedirectResponse(spotify.auth.get_authorize_url())
 
 
-@app.get('/callback')
+@app.get('/callback', response_class=HTMLResponse)
 async def spotify_callback(request: Request, code: str, state: str):
     redirect_uri = request.url_for('spotify_callback')
     spotify = get_spotify(app.state.session, redirect_uri)
@@ -44,7 +45,7 @@ async def spotify_callback(request: Request, code: str, state: str):
             refresh_token=token.refresh_token
         )
     auth_state_data.pop(state)
-    return 'Authorized successfully. Now return to the chat :)'
+    return authorized_response
 
 
 @app.on_event('startup')
