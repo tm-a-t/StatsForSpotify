@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import ForwardRef
 
 import databases
 import ormar
@@ -19,7 +20,7 @@ class User(ormar.Model):
     class Meta(BaseMeta):
         pass
 
-    id: int = ormar.Integer(primary_key=True, autoincrement=False)
+    id: int = ormar.BigInteger(primary_key=True, autoincrement=False)
     first_name: str = ormar.String(max_length=64)
     last_name: str | None = ormar.String(max_length=64, nullable=True)
     username: str | None = ormar.String(max_length=32, nullable=True)
@@ -51,8 +52,9 @@ class UserArtist(ormar.Model):
     class Meta(BaseMeta):
         tablename = 'users_x_artists'
 
-    id: int = ormar.Integer(primary_key=True)
     order: int = ormar.Integer()
+    user = ormar.ForeignKey(User)
+    artist = ormar.ForeignKey(ForwardRef('Artist'))
 
 
 class Artist(ormar.Model):

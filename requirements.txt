@@ -1,7 +1,0 @@
-telethon~=1.24.0
-databases~=0.6.0
-SQLAlchemy~=1.4.38
-ormar~=0.11.2
-spoffy~=0.6.1
-fastapi[all]~=0.78.0
-aiohttp~=3.8.1

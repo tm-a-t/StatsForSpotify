@@ -6,7 +6,7 @@ from telethon.tl import types as tl_types
 from telethon.tl.custom import Message
 
 import config
-from app.models import database, TelegramGroup, Artist, User
+from app.models import database, TelegramGroup, User
 from app.utils import get_spotify, update_user
 
 
@@ -44,21 +44,32 @@ class BotClient(TelegramClient):
             await chat_model.update(**chat_data)
 
         if chat_model.last_update is None or datetime.now() - chat_model.last_update > timedelta(hours=1):
-            await self.update_chat(chat_model)
+            ...
+        await self.update_chat(chat_model)
 
-        artists = await Artist.objects.all()  # todo: get relevant artists
-        artists_text = '\n'.join(f'{i}. {artist.name}' for i, artist in enumerate(artists[:15], start=1))
+        artists = await database.fetch_all('''
+            select * from artists
+            join (
+                select artist, "order" from users_x_artists
+                join telegramgroups_users tu on users_x_artists."user" = tu."user"
+                where tu.telegramgroup = :chat_id
+            ) ua on artists.id = ua.artist
+            group by artists.id, ua.artist, ua."order"
+            order by count(ua) desc, sum(ua."order")
+        ''', {'chat_id': chat_model.id})
+        print([dict(x) for x in artists])
+        artists_text = '\n'.join(f'{i}. {artist["name"]}' for i, artist in enumerate(artists[:15], start=1))
         artists_text = artists_text or 'No data'
 
-        users = await User.objects.all()  # todo: get relevant users
-        users_text = ', '.join(f'{user.first_name} {user.last_name or ""}'.strip() for user in users)
-        users_text = users_text or 'No data'
+        # users = await User.objects.all()  # todo: get relevant users
+        # users_text = ', '.join(f'{user.first_name} {user.last_name or ""}'.strip() for user in users)
+        # users_text = users_text or 'No data'
 
         text = (
             f'Top artists:\n'
             f'{artists_text}\n'
             f'\n'
-            f'Stats based on data from: {users_text}'
+            # f'Stats based on data from: {users_text}'
         )
         auth_button = Button.auth('Authorize', config.DOMAIN)
         await message.edit(text, buttons=auth_button)

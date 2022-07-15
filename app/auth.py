@@ -14,7 +14,14 @@ authorized_response = HTMLResponse(open('app/authorized.html').read(), status_co
 
 
 @router.get('/')
-async def authorize_spotify(request: Request, id: int, first_name: str, last_name: str, photo_url: str, username: str):
+async def authorize_spotify(
+    request: Request,
+    id: int,
+    first_name: str,
+    last_name: str | None = None,
+    photo_url: str | None = None,
+    username: str | None = None,
+):
     # todo: check authorization (https://core.telegram.org/widgets/login#checking-authorization)
     state = secrets.token_urlsafe(16)
     auth_state_data[state] = dict(
@@ -22,7 +29,7 @@ async def authorize_spotify(request: Request, id: int, first_name: str, last_nam
         first_name=first_name,
         last_name=last_name,
         username=username,
-        photo_url=photo_url
+        photo_url=photo_url,
     )
 
     redirect_uri = request.url_for('spotify_callback')
@@ -38,8 +45,7 @@ async def spotify_callback(request: Request, code: str, state: str):
     user = await User.objects.get_or_none(id=auth_state_data[state]['id'])
     if user is None:
         await User.objects.create(
-            **auth_state_data[state],
-            refresh_token=token.refresh_token
+            **auth_state_data[state], refresh_token=token.refresh_token
         )
     auth_state_data.pop(state)
     return authorized_response

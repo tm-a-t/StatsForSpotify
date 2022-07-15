@@ -36,7 +36,7 @@ async def update_user(spotify: AsyncSpotify, user):
         )
         artist, created = await Artist.objects.get_or_create(id=item.id, _defaults=item_data)
         if not created:
-            artist.update(**item_data)
+            await artist.update(**item_data)
 
         await artist.users.add(user, order=position)  # todo: ignore duplicates
         await artist.genres.clear()
